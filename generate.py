@@ -19,6 +19,8 @@ def build_vertices(x, y, z, block_size):
     #      [x+ block_size[1]*20, y+24, z ],
     #      [x+ block_size[1]*20, y+24, z+ block_size[0]*20],
     #      [x, y+24, z+ block_size[0]*20]] # end lower surface
+    
+    # ldr use x, z, -y coordinates (-y is positive up, z is depth)
     v = [[x-block_size[1]*20/2, y, z-block_size[0]*20/2],
          [x+ block_size[1]*20/2 , y, z-block_size[0]*20/2 ],
          [x+ block_size[1]*20/2, y, z+ block_size[0]*20/2],
@@ -37,8 +39,9 @@ with open("color_codes.json", "r") as f:
 # ldr_filename = "./ldr_files/dataset/2blocks-perpendicular_15.ldr"
 # ldr_filename = "./ldr_files/dataset/wall_augmented270_18.ldr"
 # ldr_filename = "./ldr_files/block_fake.ldr"
-# ldr_filename = "./ldr_files/2bricks_cross.ldr"
-ldr_filename = "./ldr_files/5bricks_rotate.ldr"
+ldr_filename = "./ldr_files/2bricks_cross.ldr"
+# ldr_filename = "./ldr_files/5bricks_rotate.ldr"
+# ldr_filename = "./ldr_files/7bricks_rotate.ldr"
 print(ldr_filename)
 
 columns = ["line_type", "color_code", "x", "y", "z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "file_block"]
@@ -61,7 +64,7 @@ origin = np.array([0,0,0,1]).reshape(4, 1)
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
-ax.scatter(origin[0], origin[1], origin[2])
+ax.scatter(origin[0], origin[1], origin[2], marker="x", color="red")
 
 color_list = ['b', 'g', 'r', 'c', 'm', 'y']
 # color_list = ['r']
