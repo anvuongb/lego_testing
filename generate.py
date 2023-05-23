@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
         # apply test transformation
         # if idx == 8:
-            # brick.rotate(30)
+            # brick.rotate_yaxis(30)
             # brick.translate(40, 24, -20)
             # brick.unit_translate(2,1,-1)
 

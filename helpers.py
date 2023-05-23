@@ -20,7 +20,8 @@ class Brick(object):
         self.vertices = build_vertices(0, 0, 0, self.block_size, lego_unit_length=self.unit_length, lego_unit_height=self.unit_height)
         self.apply_transformation(self.tm)
 
-    def rotate(self, angle):
+    def rotate_yaxis(self, angle):
+        # rotate around y-axis, which is the up dimension in ldr standard
         # translate the center to origin, pivot point
         self.translate(-self.init_x, -self.init_y, -self.init_z)
 
