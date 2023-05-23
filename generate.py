@@ -36,9 +36,9 @@ with open("color_codes.json", "r") as f:
 
 # ldr_filename = "./ldr_files/dataset/2blocks-perpendicular_15.ldr"
 # ldr_filename = "./ldr_files/dataset/wall_augmented270_18.ldr"
-# ldr_filename = "./block_fake.ldr"
-# ldr_filename = "./2bricks_cross.ldr"
-ldr_filename = "./5bricks_rotate.ldr"
+# ldr_filename = "./ldr_files/block_fake.ldr"
+# ldr_filename = "./ldr_files/2bricks_cross.ldr"
+ldr_filename = "./ldr_files/5bricks_rotate.ldr"
 print(ldr_filename)
 
 columns = ["line_type", "color_code", "x", "y", "z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "file_block"]
