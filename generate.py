@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
+import json
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
 
 def decode_file_block(f):
     if f.lower() == "3001.dat":
@@ -8,23 +11,37 @@ def decode_file_block(f):
     return [-1,-1]
 
 def build_vertices(x, y, z, block_size):
-    v = [[x, y, z],
-         [x+ block_size[1]*20 , y, z ],
-         [x+ block_size[1]*20, y, z+ block_size[0]*20],
-         [x, y, z+ block_size[0]*20],
-         [x, y+24, z],
-         [x+ block_size[1]*20, y+24, z ],
-         [x+ block_size[1]*20, y+24, z+ block_size[0]*20],
-         [x, y+24, z+ block_size[0]*20]]
+    # v = [[x, y, z],
+    #      [x+ block_size[1]*20 , y, z ],
+    #      [x+ block_size[1]*20, y, z+ block_size[0]*20],
+    #      [x, y, z+ block_size[0]*20], # end upper surface
+    #      [x, y+24, z],
+    #      [x+ block_size[1]*20, y+24, z ],
+    #      [x+ block_size[1]*20, y+24, z+ block_size[0]*20],
+    #      [x, y+24, z+ block_size[0]*20]] # end lower surface
+    v = [[x-block_size[1]*20/2, y, z-block_size[0]*20/2],
+         [x+ block_size[1]*20/2 , y, z-block_size[0]*20/2 ],
+         [x+ block_size[1]*20/2, y, z+ block_size[0]*20/2],
+         [x-block_size[1]*20/2, y, z+ block_size[0]*20/2], # end upper surface
+         
+         [x-block_size[1]*20/2, y+24, z-block_size[0]*20/2],
+         [x+ block_size[1]*20/2 , y+24, z-block_size[0]*20/2 ],
+         [x+ block_size[1]*20/2, y+24, z+ block_size[0]*20/2],
+         [x-block_size[1]*20/2, y+24, z+ block_size[0]*20/2]] # end lower surface
     return np.array(v).reshape((8,3))
+
+# load color dict
+with open("color_codes.json", "r") as f:
+    color_dict = json.load(f)
 
 # ldr_filename = "./ldr_files/dataset/2blocks-perpendicular_15.ldr"
 # ldr_filename = "./ldr_files/dataset/wall_augmented270_18.ldr"
 # ldr_filename = "./block_fake.ldr"
-ldr_filename = "./2bricks_cross.ldr"
+# ldr_filename = "./2bricks_cross.ldr"
+ldr_filename = "./5bricks_rotate.ldr"
 print(ldr_filename)
 
-columns = ["line_type", "color", "x", "y", "z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "file_block"]
+columns = ["line_type", "color_code", "x", "y", "z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "file_block"]
 df = pd.read_csv(ldr_filename, sep=" ", names=columns)
 df["block_size"] = df["file_block"].apply(lambda x: decode_file_block(x))
 # print(df)
@@ -46,8 +63,8 @@ fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 ax.scatter(origin[0], origin[1], origin[2])
 
-# color_list = ['b', 'g', 'r', 'c', 'm', 'y']
-color_list = ['r']
+color_list = ['b', 'g', 'r', 'c', 'm', 'y']
+# color_list = ['r']
 
 all_vertices_list = []
 for idx, row in df.iterrows():
@@ -66,16 +83,16 @@ for idx, row in df.iterrows():
     print(vertices.shape, vertices)
     print('\n\n')
     for id, v in enumerate(vertices):
-        # ax.scatter(v[0], v[1], v[2], color=color_list[idx%len(color_list)])
+        ax.scatter(v[0], v[1], v[2], color=color_dict[str(row.color_code)])
         ax.plot([vertices[id][0], vertices[(id+1)%4+4*int(id>=4)][0]],
                 [vertices[id][1], vertices[(id+1)%4+4*int(id>=4)][1]],
                 [vertices[id][2], vertices[(id+1)%4+4*int(id>=4)][2]],
-                color=color_list[idx%len(color_list)])
+                color=color_dict[str(row.color_code)])
         if id < 4:
             ax.plot([vertices[id][0], vertices[(id+4)][0]],
                     [vertices[id][1], vertices[(id+4)][1]],
                     [vertices[id][2], vertices[(id+4)][2]],
-                    color=color_list[idx%len(color_list)])
+                    color=color_dict[str(row.color_code)])
 ax.legend()
 
 # first pass clean vertices
@@ -92,8 +109,8 @@ print(all_vertices_count < 2)
 all_vertices_set = np.array(all_vertices_list)[all_vertices_count < 2]
 
 
-for id, v in enumerate(all_vertices_set):
-    ax.scatter(v[0], v[1], v[2], color=color_list[idx%len(color_list)])
+# for id, v in enumerate(all_vertices_set):
+#     ax.scatter(v[0], v[1], v[2], color=color_list[idx%len(color_list)])
 
 xlim = ax.get_xlim3d()
 ylim = ax.get_ylim3d()
