@@ -16,19 +16,12 @@ def build_vertices(x, y, z, block_size):
          [x+ block_size[1]*20, y+24, z ],
          [x+ block_size[1]*20, y+24, z+ block_size[0]*20],
          [x, y+24, z+ block_size[0]*20]]
-    # v = [[x, y, z],
-    #      [x, y + block_size[1]*20, z],
-    #      [x+ block_size[0]*20, y + block_size[1]*20, z],
-    #      [x+ block_size[0]*20, y, z],
-    #      [x, y, z+24],
-    #      [x, y+ block_size[1]*20, z+24],
-    #      [x+ block_size[0]*20, y+ block_size[1]*20, z+24],
-    #      [x+ block_size[0]*20, y, z+24]]
     return np.array(v).reshape((8,3))
 
-# ldr_filename = "./ldr_files/dataset/2blocks-perpendicular_13.ldr"
-ldr_filename = "./ldr_files/dataset/wall_augmented270_18.ldr"
+# ldr_filename = "./ldr_files/dataset/2blocks-perpendicular_15.ldr"
+# ldr_filename = "./ldr_files/dataset/wall_augmented270_18.ldr"
 # ldr_filename = "./block_fake.ldr"
+ldr_filename = "./2bricks_cross.ldr"
 print(ldr_filename)
 
 columns = ["line_type", "color", "x", "y", "z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "file_block"]
@@ -45,10 +38,6 @@ for idx, row in df.iterrows():
                    [row.d, row.e, row.f, row.y],
                    [row.g, row.h, row.i, row.z],
                    [0, 0, 0, 1]])
-    # tm = np.array([[row.a, row.d, row.g, 0],
-    #                [row.b, row.e, row.h, 0],
-    #                [row.c, row.f, row.i, 0],
-    #                [row.x, row.y, row.z, 1]])
     translation_matrices.append(tm)
 
 origin = np.array([0,0,0,1]).reshape(4, 1)
@@ -59,8 +48,9 @@ ax.scatter(origin[0], origin[1], origin[2])
 
 # color_list = ['b', 'g', 'r', 'c', 'm', 'y']
 color_list = ['r']
+
+all_vertices_list = []
 for idx, row in df.iterrows():
-    # print(tmp)
     tm = np.array([[row.a, row.b, row.c, row.x],
                    [row.d, row.e, row.f, row.y],
                    [row.g, row.h, row.i, row.z],
@@ -72,10 +62,11 @@ for idx, row in df.iterrows():
     vertices = np.matmul(tm, vertices.T)
     print(vertices.shape, vertices)
     vertices = vertices[:3,:].T
+    all_vertices_list += list(vertices)
     print(vertices.shape, vertices)
     print('\n\n')
     for id, v in enumerate(vertices):
-        ax.scatter(v[0], v[1], v[2], color=color_list[idx%len(color_list)])
+        # ax.scatter(v[0], v[1], v[2], color=color_list[idx%len(color_list)])
         ax.plot([vertices[id][0], vertices[(id+1)%4+4*int(id>=4)][0]],
                 [vertices[id][1], vertices[(id+1)%4+4*int(id>=4)][1]],
                 [vertices[id][2], vertices[(id+1)%4+4*int(id>=4)][2]],
@@ -86,6 +77,23 @@ for idx, row in df.iterrows():
                     [vertices[id][2], vertices[(id+4)][2]],
                     color=color_list[idx%len(color_list)])
 ax.legend()
+
+# first pass clean vertices
+all_vertices_count = []
+for v in all_vertices_list:
+    tmp_count = 0
+    for k in all_vertices_list:
+        if np.array_equal(v, k):
+            tmp_count += 1
+    all_vertices_count.append(tmp_count)
+all_vertices_count = np.array(all_vertices_count)
+print(all_vertices_count)
+print(all_vertices_count < 2)
+all_vertices_set = np.array(all_vertices_list)[all_vertices_count < 2]
+
+
+for id, v in enumerate(all_vertices_set):
+    ax.scatter(v[0], v[1], v[2], color=color_list[idx%len(color_list)])
 
 xlim = ax.get_xlim3d()
 ylim = ax.get_ylim3d()
