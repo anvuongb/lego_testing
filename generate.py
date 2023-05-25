@@ -26,9 +26,16 @@ if __name__ == "__main__":
     line_width = 4
     model1 = LegoModel(filepath="./ldr_files/2bricks_cross.ldr", color_code_file="color_codes.json", save_transformation_history=False)
     model2 = LegoModel(filepath="./ldr_files/7bricks_rotate.ldr", color_code_file="color_codes.json", save_transformation_history=False)
-    model1.unit_translate(-2, -2, 5)
+    # model1.unit_translate(-2, -2, 3)
     model1.rotate_yaxis(45)
     model1.generate_ldr_file("test.ldr")
+    model2.generate_ldr_file("test2.ldr")
+
+    model3 = model1 + model2
+    model3.generate_ldr_file("test3.ldr")
+
+    for brick in model1.bricks:
+        print(brick.center_x, brick.center_y, brick.center_z)
     plotly_data1 = model1.build_plotly(opacity, marker_size, line_width)
     plotly_data2 = model2.build_plotly(opacity, marker_size, line_width)
     plotly_data = plotly_data1 + plotly_data2

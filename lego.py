@@ -23,6 +23,32 @@ class LegoModel(object):
             self.load_from_ldr(self.filepath)
         return
     
+    def recalculate_center(self):
+        # calculate center
+        self.center_x = np.average([b.center_x for b in self.bricks])
+        self.center_y = np.average([b.center_y for b in self.bricks])
+        self.center_z = np.average([b.center_z for b in self.bricks])
+
+    def __add__(self, other):
+        '''
+        combine 2 lego mode, all transformations history will be deleted
+        save_transformation_history is set to False
+        color_dict are merged
+        filepath is deleted
+        bricks are merged
+        '''
+        model = LegoModel()
+
+        model.bricks = self.bricks + other.bricks
+        model.color_code_file = self.color_code_file
+        model.color_dict = self.color_dict.update(other.color_dict)
+        model.filepath = None
+        model.transformation_list = []
+        model.save_transformation_history = False
+        model.recalculate_center()
+
+        return model
+
     def clear_transformation_history(self):
         '''
         delete transformation history to avoid memory leak
@@ -73,6 +99,7 @@ class LegoModel(object):
         '''
         for idx, _ in enumerate(self.bricks):
             self.bricks[idx].rotate_yaxis(angle, pivot_point=[self.center_x, self.center_y, self.center_z])
+        self.recalculate_center()
 
     def translate(self, x, y, z):
         '''
@@ -83,6 +110,7 @@ class LegoModel(object):
                      [0, 0, 1, z],
                      [0, 0, 0, 1]])
         self.apply_transformation(tm)
+        self.recalculate_center()
 
     def unit_translate(self, x, y, z):
         '''
@@ -100,6 +128,7 @@ class LegoModel(object):
                         [0, 1, 0, y],
                         [0, 0, 1, z],
                         [0, 0, 0, 1]])
+        self.recalculate_center()
 
     def apply_transformation(self, tm):
         '''
@@ -118,6 +147,7 @@ class LegoModel(object):
 
         if self.save_transformation_history:
             self.transformation_list.append(tm)
+        self.recalculate_center()
 
     def generate_ldr_file(self, filepath):
         with open(filepath, "w") as f:
@@ -141,13 +171,17 @@ class Brick(object):
         self.center_y = y
         self.center_z = z
 
+        self.center_x_origin = x
+        self.center_y_origin = y
+        self.center_z_origin = z
+
         # initialize numpy array of vertices
         self.vertices = helpers.build_vertices(0, 0, 0, self.block_size, lego_unit_length=self.unit_length, lego_unit_height=self.unit_height)
-        self.apply_transformation(self.tm)
+        self.apply_transformation(self.tm, update_tm=False) # don't update when initialization
 
     def generate_ldr_line(self):
         s = f"1 {self.color_code}" # type 1 + color code
-        s += f" {self.center_x} {self.center_y} {self.center_z}"
+        s += f" {self.center_x_origin} {self.center_y_origin} {self.center_z_origin}"
         s += f" {self.tm[0][0]} {self.tm[0][1]} {self.tm[0][2]}"
         s += f" {self.tm[1][0]} {self.tm[1][1]} {self.tm[1][2]}"
         s += f" {self.tm[2][0]} {self.tm[2][1]} {self.tm[2][2]}"
@@ -171,7 +205,7 @@ class Brick(object):
             center_z = self.center_z
         else:
             center_x = pivot_point[0]
-            center_y = pivot_point[1]
+            center_y = self.center_y
             center_z = pivot_point[2]
 
         self.translate(-center_x, -center_y, -center_z)
@@ -194,6 +228,10 @@ class Brick(object):
                      [0, 1, 0, y],
                      [0, 0, 1, z],
                      [0, 0, 0, 1]])
+        # TODO: something is wrong when updating center during translation
+        self.center_x_origin += x
+        self.center_y_origin += y
+        self.center_z_origin += z
         self.apply_transformation(tm)
 
     def unit_translate(self, x, y, z):
@@ -204,7 +242,7 @@ class Brick(object):
         '''
         self.translate(x*self.unit_length, y*self.unit_height, z*self.unit_length)
 
-    def apply_transformation(self, tm):
+    def apply_transformation(self, tm, update_tm=True):
         '''
         apply a given transformation matrix tm to this brick
         '''
@@ -213,14 +251,20 @@ class Brick(object):
         self.vertices = vertices[:3,:].T
 
         # update center
-        center = np.array([self.center_x, self.center_y, self.center_y, 1]).reshape(4,1)
-        center = np.matmul(tm, center)
-        self.center_x = center[0,0]
-        self.center_y = center[1,0]
-        self.center_z = center[2,0]
+        # center = np.array([self.center_x, self.center_y, self.center_y, 1]).reshape(4,1)
+        # center = np.matmul(tm, center)
+        # self.center_x = center[0,0]
+        # self.center_y = center[1,0]
+        # self.center_z = center[2,0]
 
+        self.center_x = np.average(self.vertices[0,:])
+        self.center_y = np.average(self.vertices[1,:])
+        self.center_z = np.average(self.vertices[2,:])
+        
         # update internal transform
-        self.tm = np.matmul(self.tm, tm)
+        if update_tm:
+            self.tm = np.matmul(self.tm, tm)
+            # self.tm = tm
 
         if self.save_transformation_history:
             self.transformation_list.append(tm)
