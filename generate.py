@@ -30,25 +30,34 @@ if __name__ == "__main__":
     model_7brick_rotate = LegoModel(filepath="./ldr_files/7bricks_rotate.ldr", 
                                     color_code_file="color_codes.json", 
                                     save_transformation_history=False)
+    model_9brick_different = LegoModel(filepath="./ldr_files/different_bricks.ldr", 
+                                    color_code_file="color_codes.json", 
+                                    save_transformation_history=False)
     # model_1brick_float = LegoModel(filepath="./ldr_files/1brick_float.ldr", color_code_file="color_codes.json", save_transformation_history=False)
 
     # rotate 2bricks_cross by 45deg and translate z-axis by 3 lego unit
     model_2brick_cross.rotate_yaxis(45)
-    model_2brick_cross.unit_translate(0, 0, 3)
+    model_2brick_cross.unit_translate(-1, 0, 5)
 
     # add 1 brick to this model
     tm = helpers.build_translation_matrix(20, -96, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
-    brick = Brick(20, -96, 0, 
-                tm, 
-                "3001.dat",
-                69, 
-                "#8A12A8")
+    brick = Brick(20, -96, 0, tm, "3001.dat", 69, "#8A12A8")
     model_8brick_rotate = model_7brick_rotate + brick # the type here is LegoModel + Brick, these types overloading may cause confusion later ...
     # rotate 8brick_rotate by 45deg
     model_8brick_rotate.rotate_yaxis(-20)
 
+    # rotate 9bricks 90 deg then shift right a bit
+    model_9brick_different.rotate_yaxis(90)
+    model_9brick_different.unit_translate(2, 0, 0)
+    # move the top brick 
+    b = model_9brick_different.get_top_brick()
+    # b.unit_translate(-2, 0, 0)
+    # b.rotate_yaxis(90)
+    model_9brick_different.recalculate_center()
+    model_9brick_different.update_sorted_bricks_by_height()
+    
     # combine into 1 model 
-    model_combine = model_8brick_rotate + model_2brick_cross # the type here is LegoModel + LegoModel
+    model_combine = model_8brick_rotate + model_2brick_cross + model_9brick_different # the type here is LegoModel + LegoModel
 
     # generate ldr files
     model_combine.generate_ldr_file("model_combine.ldr")
@@ -64,4 +73,4 @@ if __name__ == "__main__":
                 aspectmode='data'
             ))
     fig = go.Figure(data=plotly_data, layout=layout)
-    fig.show()
+    fig.write_html('plotly_render.html', auto_open=False)

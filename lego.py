@@ -11,6 +11,9 @@ class LegoModel(object):
         self.bricks = []
         self.transformation_list = []
         self.save_transformation_history = save_transformation_history
+        self.sorted_bricks_indices = []
+        self.model_height = -1
+        self.model_height_in_bricks = -1 # this is only correct if there is no floating and no overlapping bricks
 
         if color_code_file != None:
             self.color_code_file = color_code_file
@@ -24,12 +27,6 @@ class LegoModel(object):
             self.load_from_ldr(self.filepath)
         return
     
-    def recalculate_center(self):
-        # calculate center
-        self.center_x = np.average([b.center_x for b in self.bricks])
-        self.center_y = np.average([b.center_y for b in self.bricks])
-        self.center_z = np.average([b.center_z for b in self.bricks])
-
     def __add__(self, other):
         '''
         combine 2 lego mode, all transformations history will be deleted
@@ -49,17 +46,37 @@ class LegoModel(object):
             model.transformation_list = []
             model.save_transformation_history = False
             model.recalculate_center()
+            self.update_sorted_bricks_by_height()
 
             return model
         
         if type(other) == Brick:
             self.add_brick(other)
             return self
+        
+    def get_top_brick(self):
+        return self.bricks[self.sorted_bricks_indices[0]]
 
     def add_brick(self, brick):
         self.bricks.append(brick)
         self.clear_transformation_history()
         self.recalculate_center()
+        self.update_sorted_bricks_by_height()
+        
+    def update_sorted_bricks_by_height(self):
+        '''
+        keep track of a sorted list of bricks by y (height) values, note that up is negative
+        '''
+        bricks_ycoor = [b.get_current_center()[1] for b in self.bricks]
+        self.sorted_bricks_indices = np.argsort(bricks_ycoor)
+        self.model_height = abs(self.bricks[self.sorted_bricks_indices[0]].center_y - self.bricks[self.sorted_bricks_indices[-1]].center_y)
+        self.model_height_in_bricks = len(set([b.center_y for b in self.bricks]))
+    
+    def recalculate_center(self):
+        # calculate center
+        self.center_x = np.average([b.center_x for b in self.bricks])
+        self.center_y = np.average([b.center_y for b in self.bricks])
+        self.center_z = np.average([b.center_z for b in self.bricks])
 
     def clear_transformation_history(self):
         '''
@@ -94,6 +111,9 @@ class LegoModel(object):
         self.center_x = np.average([b.center_x for b in self.bricks])
         self.center_y = np.average([b.center_y for b in self.bricks])
         self.center_z = np.average([b.center_z for b in self.bricks])
+        
+        # update sorted list
+        self.update_sorted_bricks_by_height()
 
     def build_plotly(self, opacity=0.5, marker_size=3, line_width=4):
         '''
