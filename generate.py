@@ -26,7 +26,7 @@ if __name__ == "__main__":
     line_width = 4
     model_2brick_cross = LegoModel(filepath="./ldr_files/2bricks_cross.ldr", color_code_file="color_codes.json", save_transformation_history=False)
     model_7brick_rotate = LegoModel(filepath="./ldr_files/7bricks_rotate.ldr", color_code_file="color_codes.json", save_transformation_history=False)
-    model_1brick_float = LegoModel(filepath="./ldr_files/1brick_float.ldr", color_code_file="color_codes.json", save_transformation_history=False)
+    # model_1brick_float = LegoModel(filepath="./ldr_files/1brick_float.ldr", color_code_file="color_codes.json", save_transformation_history=False)
 
     # rotate 2bricks_cross by 45deg and translate z-axis by 3 lego unit
     model_2brick_cross.rotate_yaxis(45)
