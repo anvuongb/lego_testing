@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import helpers
 import json
+from typing import Type
 
 class LegoModel(object):
     def __init__(self, filepath=None, color_code_file=None, save_transformation_history=False):
@@ -37,17 +38,28 @@ class LegoModel(object):
         filepath is deleted
         bricks are merged
         '''
-        model = LegoModel()
+        if type(other) == LegoModel:
+            model = LegoModel()
 
-        model.bricks = self.bricks + other.bricks
-        model.color_code_file = self.color_code_file
-        model.color_dict = self.color_dict.update(other.color_dict)
-        model.filepath = None
-        model.transformation_list = []
-        model.save_transformation_history = False
-        model.recalculate_center()
+            model.bricks = self.bricks + other.bricks
+            model.color_code_file = self.color_code_file
+            self.color_dict.update(other.color_dict)
+            model.color_dict = self.color_dict
+            model.filepath = None
+            model.transformation_list = []
+            model.save_transformation_history = False
+            model.recalculate_center()
 
-        return model
+            return model
+        
+        if type(other) == Brick:
+            self.add_brick(other)
+            return self
+
+    def add_brick(self, brick):
+        self.bricks.append(brick)
+        self.clear_transformation_history()
+        self.recalculate_center()
 
     def clear_transformation_history(self):
         '''
@@ -90,6 +102,23 @@ class LegoModel(object):
         data = []
         for brick in self.bricks:
             data += brick.build_plotly(opacity, marker_size, line_width)
+        return data
+    
+    def build_plotly_center(self, opacity=0.5, marker_size=3, line_width=4):
+        return [self.bricks[0]._build_plotly_data(
+            [self.center_x],
+            [self.center_y],
+            [self.center_z],
+            1, "#000000", marker_size, line_width
+        )]
+    
+    def build_plotly_bricks_center(self, opacity=0.5, marker_size=3, line_width=4):
+        '''
+        return a list of plotly data for all bricks
+        '''
+        data = []
+        for brick in self.bricks:
+            data += brick.build_plotly_center(opacity, marker_size, line_width)
         return data
     
     def rotate_yaxis(self, angle):
@@ -148,7 +177,7 @@ class LegoModel(object):
         if self.save_transformation_history:
             self.transformation_list.append(tm)
         self.recalculate_center()
-
+    
     def generate_ldr_file(self, filepath):
         with open(filepath, "w") as f:
             for brick in self.bricks:
@@ -168,9 +197,10 @@ class Brick(object):
 
         # these coordinates are at the center of the brick
         self.center_x = x
-        self.center_y = y
+        self.center_y = y - self.unit_height/2 # ldr format is nailed to top surface
         self.center_z = z
 
+        # this stores the ldr format
         self.center_x_origin = x
         self.center_y_origin = y
         self.center_z_origin = z
@@ -178,6 +208,18 @@ class Brick(object):
         # initialize numpy array of vertices
         self.vertices = helpers.build_vertices(0, 0, 0, self.block_size, lego_unit_length=self.unit_length, lego_unit_height=self.unit_height)
         self.apply_transformation(self.tm, update_tm=False) # don't update when initialization
+    
+    def recalculate_center(self):
+        # calculate center
+        self.center_x, self.center_y, self.center_z = np.average(self.vertices, axis=0)
+        self.center_x_origin = self.center_x
+        self.center_y_origin = self.center_y - self.unit_height/2
+        self.center_z_origin = self.center_z
+
+    def get_current_center(self):
+        # center = np.array([self.center_x_origin, self.center_y_origin, self.center_z_origin, 1]).reshape([4,1])
+        # return np.matmul(self.tm, center)
+        return self.center_x, self.center_y, self.center_z
 
     def generate_ldr_line(self):
         s = f"1 {self.color_code}" # type 1 + color code
@@ -229,9 +271,9 @@ class Brick(object):
                      [0, 0, 1, z],
                      [0, 0, 0, 1]])
         # TODO: something is wrong when updating center during translation
-        self.center_x_origin += x
-        self.center_y_origin += y
-        self.center_z_origin += z
+        # self.center_x_origin += x
+        # self.center_y_origin += y
+        # self.center_z_origin += z
         self.apply_transformation(tm)
 
     def unit_translate(self, x, y, z):
@@ -249,17 +291,7 @@ class Brick(object):
         vertices = np.hstack([self.vertices, np.ones((8,1))])
         vertices = np.matmul(tm, vertices.T)
         self.vertices = vertices[:3,:].T
-
-        # update center
-        # center = np.array([self.center_x, self.center_y, self.center_y, 1]).reshape(4,1)
-        # center = np.matmul(tm, center)
-        # self.center_x = center[0,0]
-        # self.center_y = center[1,0]
-        # self.center_z = center[2,0]
-
-        self.center_x = np.average(self.vertices[0,:])
-        self.center_y = np.average(self.vertices[1,:])
-        self.center_z = np.average(self.vertices[2,:])
+        self.recalculate_center()
         
         # update internal transform
         if update_tm:
@@ -293,6 +325,20 @@ class Brick(object):
                         )
         return d
     
+    def build_plotly_center(self, opacity=0.5, marker_size=3, line_width=4):
+        # return [self._build_plotly_data(
+        #     [self.center_x, self.center_x_origin],
+        #     [self.center_y, self.center_y_origin],
+        #     [self.center_z, self.center_z_origin],
+        #     opacity, self.color_hex, marker_size, line_width
+        # )]
+        return [self._build_plotly_data(
+            [self.center_x],
+            [self.center_y],
+            [self.center_z],
+            opacity, self.color_hex, marker_size, line_width
+        )]
+
     def build_plotly(self, opacity=0.5, marker_size=3, line_width=4):
         '''
         return a list of plotly data for this brick

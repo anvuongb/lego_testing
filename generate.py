@@ -24,21 +24,36 @@ if __name__ == "__main__":
     opacity = 0.5
     marker_size = 3
     line_width = 4
-    model1 = LegoModel(filepath="./ldr_files/2bricks_cross.ldr", color_code_file="color_codes.json", save_transformation_history=False)
-    model2 = LegoModel(filepath="./ldr_files/7bricks_rotate.ldr", color_code_file="color_codes.json", save_transformation_history=False)
-    # model1.unit_translate(-2, -2, 3)
-    model1.rotate_yaxis(45)
-    model1.generate_ldr_file("test.ldr")
-    model2.generate_ldr_file("test2.ldr")
+    model_2brick_cross = LegoModel(filepath="./ldr_files/2bricks_cross.ldr", color_code_file="color_codes.json", save_transformation_history=False)
+    model_7brick_rotate = LegoModel(filepath="./ldr_files/7bricks_rotate.ldr", color_code_file="color_codes.json", save_transformation_history=False)
+    model_1brick_float = LegoModel(filepath="./ldr_files/1brick_float.ldr", color_code_file="color_codes.json", save_transformation_history=False)
 
-    model3 = model1 + model2
-    model3.generate_ldr_file("test3.ldr")
+    # rotate 2bricks_cross by 45deg and translate z-axis by 3 lego unit
+    model_2brick_cross.rotate_yaxis(45)
+    model_2brick_cross.unit_translate(0, 0, 3)
 
-    for brick in model1.bricks:
-        print(brick.center_x, brick.center_y, brick.center_z)
-    plotly_data1 = model1.build_plotly(opacity, marker_size, line_width)
-    plotly_data2 = model2.build_plotly(opacity, marker_size, line_width)
-    plotly_data = plotly_data1 + plotly_data2
+    # add 1 brick to this model
+    tm = helpers.build_translation_matrix(20, -96, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+    brick = Brick(20, -96, 0, 
+                tm, 
+                "3001.dat",
+                69, 
+                "#8A12A8")
+    model_8brick_rotate = model_7brick_rotate + brick # the type here is LegoModel + Brick, these types overloading may cause confusion later ...
+    # rotate 8brick_rotate by 45deg
+    model_8brick_rotate.rotate_yaxis(-20)
+
+    # combine into 1 model 
+    model_combine = model_8brick_rotate + model_2brick_cross # the type here is LegoModel + LegoModel
+
+    # generate ldr files
+    model_combine.generate_ldr_file("model_combine.ldr")
+
+    # plot in plotly
+    plotly_data = model_combine.build_plotly(opacity, marker_size, line_width)
+    plotly_data_center = model_combine.build_plotly_center(opacity, marker_size, line_width)
+    plotly_data_bricks_center = model_combine.build_plotly_bricks_center(opacity, marker_size, line_width)
+    plotly_data = plotly_data + plotly_data_center + plotly_data_bricks_center 
 
     layout = go.Layout(
                 scene=dict(
