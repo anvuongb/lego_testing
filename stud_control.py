@@ -10,16 +10,16 @@ def get_all_possible_placements(stud_mat1, stud_mat2):
     return: a list of possible unit translations for brick 2
     '''
     corr = correlate2d(stud_mat1, stud_mat2, mode='full', boundary='fill', fillvalue=0.0)
-    print("corr matrix")
-    print(corr)
+    # print("corr matrix")
+    # print(corr)
     row_idx, col_idx = np.where(corr == 0)
     if len(row_idx) == 0 or len(col_idx) == 0:
         return []
-    print(list(zip(row_idx, col_idx)))
+    # print(list(zip(row_idx, col_idx)))
 
     row_idx = -(row_idx - stud_mat1.shape[0] + 1) # reverse since matrix representation is different than coordinate representation for this direction
     col_idx = col_idx - stud_mat2.shape[1] + 1
-    print(list(zip(row_idx, col_idx)))
+    # print(list(zip(row_idx, col_idx)))
     return list(zip(col_idx, row_idx))
 
 def update_occupied_stud_matrx(stud_mat, top_mat, xunit, zunit):
@@ -36,8 +36,8 @@ def update_occupied_stud_matrx(stud_mat, top_mat, xunit, zunit):
     rowmin, rowmax = np.clip(rowmin_orig - zunit, a_min=0, a_max=stud_mat.shape[0]), np.clip(rowmax_orig - zunit, a_min=0, a_max=stud_mat.shape[0])
     colmin, colmax = np.clip(colmin_orig + xunit, a_min=0, a_max=stud_mat.shape[1]), np.clip(colmax_orig + xunit, a_min=0, a_max=stud_mat.shape[1])
 
-    print(rowmin, rowmax)
-    print(colmin, colmax)
+    # print(rowmin, rowmax)
+    # print(colmin, colmax)
 
     stud_mat[rowmin:rowmax, colmin:colmax] = 1
     return stud_mat

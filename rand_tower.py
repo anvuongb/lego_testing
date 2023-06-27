@@ -11,10 +11,10 @@ if __name__ == "__main__":
     line_width = 4
 
     bricks_bank = ["2456.dat", "3001.dat", "3003.dat", "3004.dat", "3006.dat", "3008.dat"]
-    colors_bank = [72, 75, 77, 79, 81, 83, 85, 87]
+    colors_bank = [60, 62, 64, 66, 68, 72, 75, 77, 79, 81, 83, 85, 87]
     default_tm = helpers.build_translation_matrix(0, -24, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 
-    bricks_height = 15
+    bricks_height = 99
     bricks_per_level = 10
 
     bricks_list = []
