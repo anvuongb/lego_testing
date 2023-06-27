@@ -23,18 +23,17 @@ def get_all_possible_placements(stud_mat1, stud_mat2):
     return list(zip(col_idx, row_idx))
 
 def update_occupied_stud_matrx(stud_mat, top_mat, xunit, zunit):
-
+    '''
+    update occupancy matrix when placing Brick2 (top_mat) on top of Brick1 (stud_mat)
+    Brick2 is translated by xunit and zunit
+    '''
     rowmax_orig = stud_mat.shape[0]
-    if stud_mat.shape[0] <= top_mat.shape[0]:
-        rowmin_orig = 0
-    else:
-        rowmin_orig = stud_mat.shape[0] - top_mat.shape[0] 
+    rowmin_orig = stud_mat.shape[0] - top_mat.shape[0]
 
     colmin_orig = 0
-    colmax_orig = np.min([stud_mat.shape[1], top_mat.shape[1]])
+    colmax_orig = top_mat.shape[1]
 
-
-    rowmin, rowmax = np.clip(rowmin_orig-zunit, a_min=0, a_max=stud_mat.shape[0]), np.clip(rowmax_orig - zunit, a_min=0, a_max=stud_mat.shape[0])
+    rowmin, rowmax = np.clip(rowmin_orig - zunit, a_min=0, a_max=stud_mat.shape[0]), np.clip(rowmax_orig - zunit, a_min=0, a_max=stud_mat.shape[0])
     colmin, colmax = np.clip(colmin_orig + xunit, a_min=0, a_max=stud_mat.shape[1]), np.clip(colmax_orig + xunit, a_min=0, a_max=stud_mat.shape[1])
 
     print(rowmin, rowmax)

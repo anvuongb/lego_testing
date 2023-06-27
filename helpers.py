@@ -1,8 +1,15 @@
 import numpy as np
 import plotly.graph_objects as go
 
+def coin_flip():
+    if np.random.randint(1,101) >=50:
+        return True
+    return False
+
 def decode_file_block(f):
     # print(f)
+    if f.lower() == "2456.dat":
+        return [2,6]
     if f.lower() == "3001.dat":
         return [2,4]
     if f.lower() == "3002.dat":

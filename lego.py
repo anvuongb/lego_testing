@@ -244,13 +244,12 @@ class Brick(object):
         self.recalculate_center()
 
     def translate_corner_to_brick_relative(self, brick):
-
         x_target = brick.center_x - brick.unit_length*brick.block_size[1]/2
         z_target = brick.center_z - brick.unit_length*brick.block_size[0]/2
-
+        print(x_target, z_target)
         x_org = self.center_x - self.unit_length*self.block_size[1]/2
         z_org = self.center_z - self.unit_length*self.block_size[0]/2
-
+        print(x_org, z_org)
         self.translate(x_target - x_org, 0, 0)
         self.translate(0, 0, z_target - z_org)
         self.recalculate_center()
@@ -282,6 +281,13 @@ class Brick(object):
         '''
         self.transformation_list = []
 
+    def rotate_yaxis_90deg_align_origin(self):
+        self.rotate_yaxis(90)
+        self.block_size = [self.block_size[1], self.block_size[0]]
+        self.stud_matrix = np.zeros(self.block_size)
+        self.translate_corner_to_origin()
+        
+    
     def rotate_yaxis(self, angle, pivot_point = None):
         '''
         rotate this brick around y-axis, which is the up dimension in ldr standard
