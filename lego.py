@@ -6,7 +6,15 @@ import json
 from typing import Type
 
 class LegoModel(object):
-    def __init__(self, filepath=None, color_code_file=None, save_transformation_history=False):
+    def __init__(self, filepath=None, color_code_file=None, save_transformation_history=False, brick=None):
+        if brick is not None:
+            self.bricks = [brick]
+            # update center and height
+            self.center_x = np.average([b.center_x for b in self.bricks])
+            self.center_y = np.average([b.center_y for b in self.bricks])
+            self.center_z = np.average([b.center_z for b in self.bricks])
+            self.update_sorted_bricks_by_height()
+            return
         self.filepath = filepath
         self.bricks = []
         self.transformation_list = []
@@ -214,6 +222,7 @@ class Brick(object):
         self.tm = default_transform_matrix
         self.transformation_list = []
         self.save_transformation_history = save_transformation_history
+        self.stud_matrix = np.zeros(self.block_size)
 
         # these coordinates are at the center of the brick
         self.center_x = x
@@ -229,6 +238,23 @@ class Brick(object):
         self.vertices = helpers.build_vertices(0, 0, 0, self.block_size, lego_unit_length=self.unit_length, lego_unit_height=self.unit_height)
         self.apply_transformation(self.tm, update_tm=False) # don't update when initialization
     
+    def translate_corner_to_origin(self):
+        self.translate(self.unit_length*self.block_size[1]/2, 0, 0)
+        self.translate(0, 0, self.unit_length*self.block_size[0]/2)
+        self.recalculate_center()
+
+    def translate_corner_to_brick_relative(self, brick):
+
+        x_target = brick.center_x - brick.unit_length*brick.block_size[1]/2
+        z_target = brick.center_z - brick.unit_length*brick.block_size[0]/2
+
+        x_org = self.center_x - self.unit_length*self.block_size[1]/2
+        z_org = self.center_z - self.unit_length*self.block_size[0]/2
+
+        self.translate(x_target - x_org, 0, 0)
+        self.translate(0, 0, z_target - z_org)
+        self.recalculate_center()
+
     def recalculate_center(self):
         # calculate center
         self.center_x, self.center_y, self.center_z = np.average(self.vertices, axis=0)
