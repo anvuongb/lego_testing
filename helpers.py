@@ -1,5 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
+import ast
 
 def coin_flip():
     if np.random.randint(1,101) >=50:
@@ -8,12 +9,9 @@ def coin_flip():
 
 def decode_file_block(f):
     # print(f)
-    if f.lower() == "base6x6":
-        return [6,6]
-    if f.lower() == "base10x10":
-        return [10,10]
-    if f.lower() == "base20x20":
-        return [20,20]
+    if f.lower()[:4] == "base":
+        s = f.split("base")[1].split("x")
+        return [ast.literal_eval(s[0]), ast.literal_eval(s[1])]
     if f.lower() == "2456.dat":
         return [2,6]
     if f.lower() == "3001.dat":
