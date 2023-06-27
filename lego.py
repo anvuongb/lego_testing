@@ -211,6 +211,11 @@ class LegoModel(object):
             for brick in self.bricks:
                 f.write(brick.generate_ldr_line() + "\n")
 
+class LayerBrick(object):
+    def __init__(self, bricks_list, layer_stud_mat):
+        self.bricks_list = bricks_list
+        self.layer_stud_mat = layer_stud_mat
+
 class Brick(object):
     def __init__(self, x, y, z, default_transform_matrix, block_type, color_code=-1, color_hex="#ffffff", lego_unit_length=20, lego_unit_height=24, save_transformation_history=False):
         self.block_type = block_type

@@ -8,6 +8,12 @@ def coin_flip():
 
 def decode_file_block(f):
     # print(f)
+    if f.lower() == "base6x6":
+        return [6,6]
+    if f.lower() == "base10x10":
+        return [10,10]
+    if f.lower() == "base20x20":
+        return [20,20]
     if f.lower() == "2456.dat":
         return [2,6]
     if f.lower() == "3001.dat":
@@ -18,6 +24,8 @@ def decode_file_block(f):
         return [2,2]
     if f.lower() == "3004.dat":
         return [1,2]
+    if f.lower() == "3005.dat":
+        return [1,1]
     if f.lower() == "3006.dat":
         return [2,10]
     if f.lower() == "3008.dat":
