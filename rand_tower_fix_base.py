@@ -96,4 +96,4 @@ if __name__ == "__main__":
     for brick in bricks_list[1:]:
         model.add_brick(brick)
 
-    model.generate_ldr_file("test.ldr")
+    model.generate_ldr_file("tower.ldr")
