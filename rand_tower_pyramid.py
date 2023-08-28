@@ -24,20 +24,20 @@ if __name__ == "__main__":
 
     # bricks_bank = ["2456.dat", "3001.dat", "3002.dat", "3003.dat", "3004.dat", "3006.dat", "3008.dat"]
     bricks_bank = ["3002.dat", "3003.dat", "3004.dat", "3005.dat"]
-    # bricks_bank = ["3004.dat"]
-    bricks_bank_budget = {
-        "3001.dat":100, 
-        "3002.dat":100, 
-        "3003.dat":200, 
-        "3004.dat":100, 
-        "3005.dat":100
-    }
-    # bricks_bank_budget = {"3004.dat":200}
+    bricks_bank = ["3003.dat"]
+    # bricks_bank_budget = {
+    #     "3001.dat":100, 
+    #     "3002.dat":100, 
+    #     "3003.dat":200, 
+    #     "3004.dat":100, 
+    #     "3005.dat":100
+    # }
+    bricks_bank_budget = {"3003.dat":200}
     colors_bank = [60, 62, 64, 66, 68, 72, 75, 77, 79, 81, 83, 85, 87, 302, 339, 52, 285, 324, 273]
     # colors_bank = [35]
     default_tm = helpers.build_translation_matrix(0, -24, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 
-    bricks_height = 5
+    bricks_height = 4
     if len(sys.argv) > 3:
         bricks_height = ast.literal_eval(sys.argv[3])
     bricks_per_level = sum(bricks_bank_budget.values())
@@ -50,6 +50,7 @@ if __name__ == "__main__":
     brick_color = colors_bank[np.random.randint(0, len(colors_bank))]
     base_brick = Brick(0,-24, 0, default_tm, brick_type, brick_color, "#8A12A8")
     curr_layer = LayerBrick([base_brick], base_brick.stud_matrix)
+    stud_mat_list = []
     if helpers.coin_flip():
         base_brick.rotate_yaxis_90deg_align_origin()
     else:
@@ -107,7 +108,10 @@ if __name__ == "__main__":
                     break
             if not found:
                 print(f"Error no possible placement found, layer {idx_h}, brick {idx_w}")
+        
+        stud_mat_list.append(next_stud_mat)
         next_stud_mat = next_stud_mat[1:base_brick.stud_matrix.shape[0]-1,1:base_brick.stud_matrix.shape[1]-1]
+        
         curr_layer = LayerBrick(tmp_list, 1-next_stud_mat)
         new_base_brick = Brick(0,-24, 0, default_tm, "base"+str(base_brick.stud_matrix.shape[0]-2)+"x"+str(base_brick.stud_matrix.shape[1]-2), brick_color, "#8A12A8")
         new_base_brick.translate_corner_to_brick_relative(base_brick)
@@ -122,3 +126,6 @@ if __name__ == "__main__":
 
     model.generate_ldr_file(os.path.join(output_dir, f"base_{base}"+"_"+output_filename)+".ldr")
     print("exporting", os.path.join(output_dir, f"base_{base}"+"_"+output_filename)+".ldr")
+
+    for s in stud_mat_list:
+        print(s)
