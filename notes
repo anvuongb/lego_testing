@@ -1,0 +1,15 @@
+test.ldr -> base mlp policy, no rewards for moveup
+
+test_2.ldr -> base mlp policy, rewards for moveup
+
+test_3.ldr -> mlp 128,128,128 with relu, rewards for moveup
+
+test_4.ldr -> mlp 128,128,128 with relu, rewards for moveup = total filled holes of current layer, no punishment for moving to early => failed
+
+test_5.ldr -> mlp 128,128,128 with relu, rewards for moveup, change perce to 0.6
+
+^^^ all of these contains massive bug in next layer stud mat
+
+tried PPO and DQN with "full" placement mode, still not working, tends to stuck in some local minima
+
+need to recheck the occupancy mask
