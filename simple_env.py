@@ -128,12 +128,12 @@ class SimpleLegoEnv(gym.Env):
                     # only calculate reward for move up if it's actually possible to place next brick
                     if len(placements_list) > 0:
                         perc = np.sum(self.stud_mat_list[self.current_layer])/np.sum(target_stud_mat_list[self.current_layer])
-                        if perc < -1.6:
+                        if perc < 0.6:
                             reward = -5 # penalize for jumping to next layer to soon
-                        elif perc < -1.8:
-                            reward = 10 # good reward when knowing when to move up
+                        elif perc < 0.8:
+                            reward = 1 # good reward when knowing when to move up
                         else:
-                            reward = 20
+                            reward = 2
                         # rewards when moveup = filled holes of current layer
                         # reward = np.sum(np.multiply(self.stud_mat_list[self.current_layer], target_stud_mat_list[self.current_layer]))
                         self.current_layer += 1
@@ -142,13 +142,13 @@ class SimpleLegoEnv(gym.Env):
                         next_stud_mat_layer = 1 - self.current_stud_mat
                     else:
                         # moving up to soon, no next possible move, stay on current level
-                        reward = -10
+                        reward = -1
                         next_stud_mat = self.current_stud_mat
                         next_stud_mat_layer = self.current_stud_mat_layer
                         # terminated = True
                 else:
                     # no brick at current layer, i.e next brick will be floating, big violation
-                    reward = -10
+                    reward = -1
                     next_stud_mat = self.current_stud_mat
                     next_stud_mat_layer = self.current_stud_mat_layer
                     # terminated = True
@@ -184,7 +184,7 @@ class SimpleLegoEnv(gym.Env):
                 # immediate terminate when taking invalid placement
                 next_stud_mat = self.current_stud_mat
                 next_stud_mat_layer = self.current_stud_mat_layer
-                reward = -10 # illegal move
+                reward = -1 # illegal move
                 # terminated = True
         # print(self.current_layer)
         # print(next_stud_mat.shape)
