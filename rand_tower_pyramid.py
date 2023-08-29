@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # colors_bank = [35]
     default_tm = helpers.build_translation_matrix(0, -24, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 
-    bricks_height = 4
+    bricks_height = 10
     if len(sys.argv) > 3:
         bricks_height = ast.literal_eval(sys.argv[3])
     bricks_per_level = sum(bricks_bank_budget.values())

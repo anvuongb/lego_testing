@@ -11,7 +11,7 @@ base = np.array([[0, 0, 0, 0, 0, 0, 0, 0],
                  [0, 0, 0, 0, 0, 0, 0, 0]])
 stud = np.array([[1,1],
                  [1,1]])
-PLACEMENT_MODE = "valid"
+PLACEMENT_MODE = "full"
 actions = get_all_possible_placements(base, stud, mode=PLACEMENT_MODE)
 print(actions)
 print(len(actions))
