@@ -6,6 +6,7 @@ from lego import Brick, LegoModel
 from stud_control import update_occupied_stud_matrx, get_all_possible_placements
 import helpers
 from collections import deque
+from copy import deepcopy
 
 # # valid mode placement
 # ALL_ACTIONS = [(0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6), 
@@ -29,7 +30,7 @@ N_DISCRETE_ACTIONS = len(ALL_ACTIONS)
 
 ACTIONS_MAP = dict(zip(range(N_DISCRETE_ACTIONS), ALL_ACTIONS))
 # print(ACTIONS_MAP)
-PREV_ACTIONS_QUEUE_LEN = 32
+PREV_ACTIONS_QUEUE_LEN = 8
 
 
 
@@ -48,30 +49,33 @@ target_stud_mat_list = [
               [1., 1., 1., 1., 1., 1., 1., 1.],
               [1., 1., 1., 1., 1., 1., 1., 1.],
               [1., 1., 1., 1., 1., 1., 1., 1.]]),
-    np.array([[-1., -1., -1., -1., -1., -1., -1., -1.],
-              [-1., 1., 1., 1., 1., 1., 1., -1.],
-              [-1., 1., 1., 1., 1., 1., 1., -1.],
-              [-1., 1., 1., 1., 1., 1., 1., -1.],
-              [-1., 1., 1., 1., 1., 1., 1., -1.],
-              [-1., 1., 1., 1., 1., 1., 1., -1.],
-              [-1., 1., 1., 1., 1., 1., 1., -1.],
-              [-1., -1., -1., -1., -1., -1., -1., -1.]]),
-    np.array([[-1., -1., -1., -1., -1., -1., -1., -1.],
-              [-1., -1., -1., -1., -1., -1., -1., 0],
-              [-1., -1., 1., 1., 1., 1., -1., -1.],
-              [-1., -1., 1., 1., 1., 1., -1., -1.],
-              [-1., -1., 1., 1., 1., 1., -1., -1.],
-              [-1., -1., 1., 1., 1., 1., -1., -1.],
-              [-1., -1., -1., -1., -1., -1., -1., -1.],
-              [-1., -1., -1., -1., -1., -1., -1., -1.]]),
-    np.array([[-1., -1., -1., -1., -1., -1., -1., -1.],
-              [-1., -1., -1., -1., -1., -1., -1., 0],
-              [-1., -1., -1., -1., -1., -1., -1., -1.],
-              [-1., -1., -1., 1., 1., -1., -1., -1.],
-              [-1., -1., -1., 1., 1., -1., -1., -1.],
-              [-1., -1., -1., -1., -1., -1., -1., -1.],
-              [-1., -1., -1., -1., -1., -1., -1., -1.],
-              [-1., -1., -1., -1., -1., -1., -1., -1.]])
+
+    np.array([[-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5.,  1.,  1.,  1.,  1.,  1.,  1., -5.],
+              [-5.,  1.,  1.,  1.,  1.,  1.,  1., -5.],
+              [-5.,  1.,  1.,  1.,  1.,  1.,  1., -5.],
+              [-5.,  1.,  1.,  1.,  1.,  1.,  1., -5.],
+              [-5.,  1.,  1.,  1.,  1.,  1.,  1., -5.],
+              [-5.,  1.,  1.,  1.,  1.,  1.,  1., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.]]),
+
+    np.array([[-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5., -5.,  1.,  1.,  1.,  1., -5., -5.],
+              [-5., -5.,  1.,  1.,  1.,  1., -5., -5.],
+              [-5., -5.,  1.,  1.,  1.,  1., -5., -5.],
+              [-5., -5.,  1.,  1.,  1.,  1., -5., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.]]),
+
+    np.array([[-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5., -5., -5.,  1.,  1., -5., -5., -5.],
+              [-5., -5., -5.,  1.,  1., -5., -5., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.],
+              [-5., -5., -5., -5., -5., -5., -5., -5.]])
 ]
 # default transform for lego brick
 DEFAULT_TRANSFORM = helpers.build_translation_matrix(0, -24, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
@@ -99,7 +103,7 @@ class SimpleLegoEnv(gym.Env):
         # N_CHANNELS -> pyramid height
         # HEIGHT = WIDTH = base size
         self.observation_space = spaces.Box(low=-1, high=1,
-                                            shape=(N_CHANNELS*HEIGHT*WIDTH,), dtype=np.int16)
+                                            shape=(2*N_CHANNELS*HEIGHT*WIDTH+ PREV_ACTIONS_QUEUE_LEN,), dtype=np.int16)
         self.current_layer = 0
         self.stud_mat_list = [np.zeros((HEIGHT, WIDTH)) for i in range(N_CHANNELS) ]
         self.current_stud_mat = self.stud_mat_list[self.current_layer]
@@ -110,10 +114,11 @@ class SimpleLegoEnv(gym.Env):
         self.base_brick_stud_mat = np.ones(BASE_BRICK_SHAPE)
         self.bricks_list = []
         self.bricks_per_level = [0 for _ in range(HEIGHT)]
-        self.prev_actions = deque([-1. for _ in range(PREV_ACTIONS_QUEUE_LEN)], maxlen=PREV_ACTIONS_QUEUE_LEN) # save last 32 actions
+        self.prev_actions = deque([-1. for _ in range(PREV_ACTIONS_QUEUE_LEN)], maxlen=PREV_ACTIONS_QUEUE_LEN) # save last 8 actions
+        self.jumped = False
     
     def step(self, action):
-        last_value = calculate_total_value(self.stud_mat_list, target_stud_mat_list)
+        # last_value = calculate_total_value(self.stud_mat_list, target_stud_mat_list)
         self.prev_actions.append(action)
         info = {}
         truncated = False
@@ -127,28 +132,31 @@ class SimpleLegoEnv(gym.Env):
                     placements_list = get_all_possible_placements(next_stud_mat_layer.copy(), self.base_brick_stud_mat, mode="full")
                     # only calculate reward for move up if it's actually possible to place next brick
                     if len(placements_list) > 0:
+                        # print("jumped successfully")
+                        self.jumped = True
                         perc = np.sum(self.stud_mat_list[self.current_layer])/np.sum(target_stud_mat_list[self.current_layer])
-                        if perc < 0.6:
-                            reward = -5 # penalize for jumping to next layer to soon
-                        elif perc < 0.8:
+                        if perc < 0.8:
+                            reward = -2 # penalize for jumping to next layer to soon
+                        elif perc < 0.9:
                             reward = 1 # good reward when knowing when to move up
                         else:
-                            reward = 2
+                            reward = 2 # close to perfectly filled
                         # rewards when moveup = filled holes of current layer
                         # reward = np.sum(np.multiply(self.stud_mat_list[self.current_layer], target_stud_mat_list[self.current_layer]))
                         self.current_layer += 1
                         # important fix, next layer depends on prev layer
                         next_stud_mat = np.zeros((HEIGHT, WIDTH))
                         next_stud_mat_layer = 1 - self.current_stud_mat
+                        # print(next_stud_mat_layer)
                     else:
-                        # moving up to soon, no next possible move, stay on current level
-                        reward = -1
+                        # moving up to soon, no next possible move
+                        reward = 0 # illegal-terminated move so heavier punishment
                         next_stud_mat = self.current_stud_mat
                         next_stud_mat_layer = self.current_stud_mat_layer
                         # terminated = True
                 else:
                     # no brick at current layer, i.e next brick will be floating, big violation
-                    reward = -1
+                    reward = 0 # illegal-terminated move so heavier punishment
                     next_stud_mat = self.current_stud_mat
                     next_stud_mat_layer = self.current_stud_mat_layer
                     # terminated = True
@@ -163,6 +171,9 @@ class SimpleLegoEnv(gym.Env):
             # reward = current_value
         else:
             placements_list = get_all_possible_placements(self.current_stud_mat_layer, self.base_brick_stud_mat, mode="full")
+            # if self.jumped:
+            #     print(action_decode)
+            #     print(placements_list)
             if action_decode in placements_list:
                 xunit, zunit = action_decode
 
@@ -172,20 +183,45 @@ class SimpleLegoEnv(gym.Env):
                 self.bricks_list.append(brick)
                 self.bricks_per_level[self.current_layer] += 1
 
+                tmp_stud_mat = np.zeros((HEIGHT, WIDTH))
+                tmp_stud_mat = update_occupied_stud_matrx(self.current_stud_mat.copy(), 
+                            np.ones(BASE_BRICK_SHAPE), xunit, zunit)
+
                 next_stud_mat = update_occupied_stud_matrx(self.current_stud_mat.copy(), 
                             np.ones(BASE_BRICK_SHAPE), xunit, zunit)
                 next_stud_mat_layer = update_occupied_stud_matrx(self.current_stud_mat_layer.copy(), 
                             np.ones(BASE_BRICK_SHAPE), xunit, zunit)
-                current_value = calculate_total_value(self.stud_mat_list, target_stud_mat_list)
-                reward = current_value - last_value
+                tmp_stud_mat_list = deepcopy(self.stud_mat_list)
+                tmp_stud_mat_list[self.current_layer] = next_stud_mat
+
+                rew_stud_mat = np.zeros((HEIGHT + (BASE_BRICK_SHAPE[0]-1)*2, WIDTH+ (BASE_BRICK_SHAPE[1]-1)*2))
+                rew_stud_mat[BASE_BRICK_SHAPE[0]-1:rew_stud_mat.shape[0]-(BASE_BRICK_SHAPE[0]-1), BASE_BRICK_SHAPE[1]-1:rew_stud_mat.shape[1]-(BASE_BRICK_SHAPE[1]-1)] = tmp_stud_mat
+
+                rew_target_mat = -np.ones((HEIGHT + (BASE_BRICK_SHAPE[0]-1)*2, WIDTH+ (BASE_BRICK_SHAPE[1]-1)*2))
+                rew_target_mat[BASE_BRICK_SHAPE[0]-1:rew_target_mat.shape[0]-(BASE_BRICK_SHAPE[0]-1), BASE_BRICK_SHAPE[1]-1:rew_target_mat.shape[1]-(BASE_BRICK_SHAPE[1]-1)] = target_stud_mat_list[self.current_layer]
+
+                if np.sum(np.multiply(rew_stud_mat, rew_target_mat)) == BASE_BRICK_SHAPE[0]*BASE_BRICK_SHAPE[1]:
+                    # perfectly fit inside target layer
+                    reward = 1
+                else:
+                    reward = -1
+                # current_value = calculate_total_value(tmp_stud_mat_list, target_stud_mat_list)
+                # reward = current_value - last_value
+                # if self.jumped:
+                #     print("action passed check")
+                #     reward += 4 # bonus for generating good action after jump
+                # print("last_value", last_value,"current_value",current_value,"reward", reward)
                 # reward = current_value
                 # reward = 4 # base size
             else:
                 # immediate terminate when taking invalid placement
                 next_stud_mat = self.current_stud_mat
                 next_stud_mat_layer = self.current_stud_mat_layer
-                reward = -1 # illegal move
-                # terminated = True
+                reward = -2 # illegal-terminated move so heavier punishment
+                # if not self.jumped:
+                #     terminated = True
+
+            self.jumped = False
         # print(self.current_layer)
         # print(next_stud_mat.shape)
         self.stud_mat_list[self.current_layer] = next_stud_mat
@@ -197,7 +233,9 @@ class SimpleLegoEnv(gym.Env):
         observation = []
         for mat in self.stud_mat_list:
             observation += list(mat.ravel())
-        # observation += list(self.prev_actions)
+        for mat in self.stud_mat_layer_list:
+            observation += list(mat.ravel())
+        observation += list(self.prev_actions)
         observation = np.array(observation, dtype=np.int16)
 
         if terminated:
@@ -210,7 +248,8 @@ class SimpleLegoEnv(gym.Env):
 
         return observation, reward, terminated, truncated, info
     
-    def reset(self, seed=42):
+    def reset(self, seed=42, options=None):
+        self.jumped = False
         self.bricks_list = []
 
         self.stud_mat_list = [np.zeros((HEIGHT, WIDTH)) for i in range(N_CHANNELS) ]
@@ -220,7 +259,7 @@ class SimpleLegoEnv(gym.Env):
         self.current_stud_mat_layer = self.stud_mat_layer_list[self.current_layer]
 
         self.observation_space = spaces.Box(low=-1, high=1,
-                                            shape=(N_CHANNELS*HEIGHT*WIDTH ,), dtype=np.int16)
+                                            shape=(2*N_CHANNELS*HEIGHT*WIDTH + PREV_ACTIONS_QUEUE_LEN,), dtype=np.int16)
         self.current_layer = 0
         self.bricks_per_level = [0 for _ in range(HEIGHT)]
         
@@ -228,7 +267,9 @@ class SimpleLegoEnv(gym.Env):
         observation = []
         for mat in self.stud_mat_list:
             observation += list(mat.ravel())
-        # observation += list(self.prev_actions)
+        for mat in self.stud_mat_layer_list:
+            observation += list(mat.ravel())
+        observation += list(self.prev_actions)
         observation = np.array(observation, dtype=np.int16)
         info = {}
         return observation, info  # reward, done, info can't be included

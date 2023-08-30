@@ -1,5 +1,5 @@
 from stable_baselines3.common.env_checker import check_env
-from simple_env import SimpleLegoEnv
+from simple_env_v2 import SimpleLegoEnv
 
 
 env = SimpleLegoEnv()

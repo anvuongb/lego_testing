@@ -23,7 +23,7 @@ if __name__ == "__main__":
     colors_bank = [60, 62, 64, 66, 68, 72, 75, 77, 79, 81, 83, 85, 87]
     default_tm = helpers.build_translation_matrix(0, -24, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 
-    bricks_height = 20
+    bricks_height = 3
     bricks_per_level = sum(bricks_bank_budget.values())
 
     bricks_list = []
@@ -32,7 +32,9 @@ if __name__ == "__main__":
     # brick_type = "base20x20"
     brick_color = colors_bank[np.random.randint(0, len(colors_bank))]
     base_brick = Brick(0,-24, 0, default_tm, brick_type, brick_color, "#8A12A8")
-    curr_layer = LayerBrick([base_brick], base_brick.stud_matrix)
+    base_size = 10
+    hole_mat = np.zeros((base_size,base_size))
+    stud_mat = np.zeros((base_size,base_size))
     if helpers.coin_flip():
         base_brick.rotate_yaxis_90deg_align_origin()
     else:
@@ -40,7 +42,6 @@ if __name__ == "__main__":
     # bricks_list.append(base_brick)
     for idx_h in range(0, bricks_height):
         tmp_list = []
-        next_stud_mat = np.zeros(base_brick.stud_matrix.shape)
         bricks_bank_budget_tmp = copy.deepcopy(bricks_bank_budget)
         for idx_w in range(bricks_per_level):
             found = False
@@ -59,35 +60,44 @@ if __name__ == "__main__":
                             lev_brick.rotate_yaxis_90deg_align_origin()
                         lev_brick.translate_corner_to_brick_relative(base_brick)
 
-                        placements_list = get_all_possible_placements(curr_layer.layer_stud_mat, np.ones(lev_brick.stud_matrix.shape))
+                        placements_full_list = get_all_possible_placements(stud_mat, np.ones(lev_brick.stud_matrix.shape), mode="valid", collide_type="brick")
+                        placements_partial_list = get_all_possible_placements(hole_mat, np.ones(lev_brick.stud_matrix.shape), mode="valid", collide_type="hole")
+                        placements_list = list(set(placements_partial_list).intersection(placements_full_list))
+
+                        # print(placements_full_list)
+                        # print(placements_partial_list)
+                        # print(placements_list)
                         if len(placements_list) > 0:
                             # randomly pick placement
                             # xunit, zunit = placements_list[np.random.randint(0,len(placements_list))]
                             # pick first placement
                             xunit, zunit = placements_list[0]
                             # update stud mat current layer placements
-                            curr_layer.layer_stud_mat = update_occupied_stud_matrx(curr_layer.layer_stud_mat, np.ones(lev_brick.stud_matrix.shape), xunit, zunit)
-                            # update stud mat for next layer
-                            next_stud_mat = update_occupied_stud_matrx(next_stud_mat, np.ones(lev_brick.stud_matrix.shape), xunit, zunit)
+                            stud_mat = update_occupied_stud_matrx(stud_mat, np.ones(lev_brick.stud_matrix.shape), xunit, zunit)
                             # translate brick2
                             lev_brick.unit_translate(xunit, -(idx_h), zunit)
-                            print("base stud mat")
-                            print(curr_layer.layer_stud_mat)
+                            # print("base stud mat")
+                            # print(curr_layer.layer_stud_mat)
                             tmp_list.append(lev_brick)
                             bricks_list.append(lev_brick)
                             found = True
                             bricks_bank_budget_tmp[brick_type] = bricks_bank_budget_tmp[brick_type] - 1
-                            print(bricks_bank_budget_tmp)
+                            # print(bricks_bank_budget_tmp)
                             break
                         else:
-                            print(f"Error no possible placement found, layer {idx_h}, brick {idx_w}, brick type {brick_type}, trying a smaller brick")
+                            pass
+                            # print(f"Error no possible placement found, layer {idx_h}, brick {idx_w}, brick type {brick_type}, trying a smaller brick")
                 else:
-                    print(f"No more brick for type {brick_type}")
+                    pass
+                    # print(f"No more brick for type {brick_type}")
                 if found:
                     break
             if not found:
-                print(f"Error no possible placement found, layer {idx_h}, brick {idx_w}")
-        curr_layer = LayerBrick(tmp_list, 1-next_stud_mat)
+                pass
+                # print(f"Error no possible placement found, layer {idx_h}, brick {idx_w}")
+        # reset stud mat for new layer
+        hole_mat = 1 - stud_mat.copy()
+        stud_mat = np.zeros((base_size, base_size))
         # base_brick = tmp_list[np.random.randint(0, len(tmp_list))]
         
 

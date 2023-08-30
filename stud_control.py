@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import correlate2d
 
-def get_all_possible_placements(stud_mat1, stud_mat2, mode='full'):
+def get_all_possible_placements(stud_mat1, stud_mat2, mode='full', collide_type="brick"):
     '''
     Create a list of all possible translation (no rotation) of Brick2
     to fit on top of Brick1
@@ -12,7 +12,12 @@ def get_all_possible_placements(stud_mat1, stud_mat2, mode='full'):
     corr = correlate2d(stud_mat1, stud_mat2, mode=mode, boundary='fill', fillvalue=0.0)
     # print("corr matrix")
     # print(corr)
-    row_idx, col_idx = np.where(corr == 0)
+    if collide_type == "brick":
+        row_idx, col_idx = np.where(corr == 0) # perfect placement
+    elif collide_type == "hole":
+        row_idx, col_idx = np.where(corr < stud_mat2.shape[0]*stud_mat2.shape[1]) # allow partial placement
+    else:
+        raise ValueError("collide_type var wrong value")
     if len(row_idx) == 0 or len(col_idx) == 0:
         return []
     # print(list(zip(row_idx, col_idx)))
