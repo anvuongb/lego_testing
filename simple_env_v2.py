@@ -31,49 +31,24 @@ N_DISCRETE_ACTIONS = len(ALL_ACTIONS)
 ACTIONS_MAP = dict(zip(range(N_DISCRETE_ACTIONS), ALL_ACTIONS))
 PREV_ACTIONS_QUEUE_LEN = 8
 
-HEIGHT = 8
-WIDTH = 8
-N_CHANNELS = 4
+N_CHANNELS = 10
+HEIGHT = N_CHANNELS*2
+WIDTH = N_CHANNELS*2
 
 BASE_BRICK_SHAPE = (2,2)
 
-target_stud_mat_list = [
-    np.array([[1., 1., 1., 1., 1., 1., 1., 1.],
-              [1., 1., 1., 1., 1., 1., 1., 1.],
-              [1., 1., 1., 1., 1., 1., 1., 1.],
-              [1., 1., 1., 1., 1., 1., 1., 1.],
-              [1., 1., 1., 1., 1., 1., 1., 1.],
-              [1., 1., 1., 1., 1., 1., 1., 1.],
-              [1., 1., 1., 1., 1., 1., 1., 1.],
-              [1., 1., 1., 1., 1., 1., 1., 1.]]),
+# generat target stud mat for pyramid
+target_stud_mat_list = []
+for i in range(N_CHANNELS):
+    # generate base
+    tmp = np.ones((HEIGHT, WIDTH))
+    # fill zero based on current level
+    tmp[:i,:] = 0
+    tmp[HEIGHT-i:,:] = 0
+    tmp[:,:i] = 0
+    tmp[:,WIDTH-i:] = 0
+    target_stud_mat_list.append(tmp)
 
-    np.array([[0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 1., 1., 1., 1., 1., 1., 0.],
-              [0., 1., 1., 1., 1., 1., 1., 0.],
-              [0., 1., 1., 1., 1., 1., 1., 0.],
-              [0., 1., 1., 1., 1., 1., 1., 0.],
-              [0., 1., 1., 1., 1., 1., 1., 0.],
-              [0., 1., 1., 1., 1., 1., 1., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.]]),
-
-    np.array([[0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 0., 1., 1., 1., 1., 0., 0.],
-              [0., 0., 1., 1., 1., 1., 0., 0.],
-              [0., 0., 1., 1., 1., 1., 0., 0.],
-              [0., 0., 1., 1., 1., 1., 0., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.]]),
-
-    np.array([[0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 0., 0., 1., 1., 0., 0., 0.],
-              [0., 0., 0., 1., 1., 0., 0., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.],
-              [0., 0., 0., 0., 0., 0., 0., 0.]])
-]
 # default transform for lego brick
 DEFAULT_TRANSFORM = helpers.build_translation_matrix(0, -24, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 BRICK_TYPE = "3003.dat" # 2x2 brick code
@@ -154,7 +129,7 @@ class SimpleLegoEnv(gym.Env):
                 model = LegoModel(brick=self.bricks_list[0])
                 for brick in self.bricks_list[1:]:
                     model.add_brick(brick)
-                model.generate_ldr_file("test_v2.ldr")
+                model.generate_ldr_file("test_v2_{}_levels.ldr".format(N_CHANNELS))
 
         return observation, reward, terminated, truncated, info
     
