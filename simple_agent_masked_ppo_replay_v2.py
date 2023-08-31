@@ -1,4 +1,4 @@
-from simple_env_v2 import SimpleLegoEnv
+from simple_env_v2 import SimpleLegoEnv, mask_fn
 from sb3_contrib.ppo_mask import MaskablePPO
 from lego import LegoModel
 import torch as th
@@ -10,29 +10,6 @@ from sb3_contrib.common.wrappers import ActionMasker
 from sb3_contrib.ppo_mask import MaskablePPO
 import gymnasium as gym
 import numpy as np
-
-def mask_fn(env: gym.Env) -> np.ndarray:
-    placements_list = get_all_possible_placements(env.occupancy_mat_list[env.current_layer_idx], env.base_brick_stud_mat, mode="valid", collide_type="brick")
-    if env.current_layer_idx > 0:
-        # allow placement over holes if possible
-        placements_partial_list = get_all_possible_placements(1 - env.occupancy_mat_list[env.current_layer_idx-1], env.base_brick_stud_mat, mode="valid", collide_type="hole")
-        placements_list = list(set(placements_partial_list).intersection(placements_list))
-    masked_actions_dict = {}
-
-    for i in range(len(ALL_ACTIONS)):
-        masked_actions_dict[i] = False
-
-    # check if moveup allowed
-    if env.bricks_per_level[env.current_layer_idx] > 0:
-        masked_actions_dict[len(ALL_ACTIONS)-1] = True
-
-    # check if other actions allowed:
-    for k, v in ACTIONS_MAP.items():
-        if v in placements_list:
-            masked_actions_dict[k] = True
-
-    masked_actions_list = [masked_actions_dict[i] for i in range(len(ALL_ACTIONS))]
-    return np.array(masked_actions_list)
 
 model = MaskablePPO.load("./models/1693378319/700000.zip")
 

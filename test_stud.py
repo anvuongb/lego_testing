@@ -19,6 +19,10 @@ stud = np.array([[1,1],
 
 corr = correlate2d(base, stud, mode="valid", boundary='fill', fillvalue=0.0)
 print(corr)
+
+def base_action_generation(base_stud_mat, mode="valid"):
+    actions = get_all_possible_placements(base, base_stud_mat, mode=mode)
+    return actions
 # PLACEMENT_MODE = "full"
 # actions = get_all_possible_placements(base, stud, mode=PLACEMENT_MODE)
 # print(actions)

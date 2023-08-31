@@ -2,37 +2,12 @@ import gymnasium as gym
 import numpy as np
 import time
 import torch as th
-from simple_env_v2 import SimpleLegoEnv
+from simple_env_v2 import SimpleLegoEnv, mask_fn
 from stud_control import get_all_possible_placements
-from simple_env import ACTIONS_MAP, ALL_ACTIONS
 
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 from sb3_contrib.common.wrappers import ActionMasker
 from sb3_contrib.ppo_mask import MaskablePPO
-
-
-def mask_fn(env: gym.Env) -> np.ndarray:
-    placements_list = get_all_possible_placements(env.occupancy_mat_list[env.current_layer_idx], env.base_brick_stud_mat, mode="valid", collide_type="brick")
-    if env.current_layer_idx > 0:
-        # allow placement over holes if possible
-        placements_partial_list = get_all_possible_placements(1 - env.occupancy_mat_list[env.current_layer_idx-1], env.base_brick_stud_mat, mode="valid", collide_type="hole")
-        placements_list = list(set(placements_partial_list).intersection(placements_list))
-    masked_actions_dict = {}
-
-    for i in range(len(ALL_ACTIONS)):
-        masked_actions_dict[i] = False
-
-    # check if moveup allowed
-    if env.bricks_per_level[env.current_layer_idx] > 0:
-        masked_actions_dict[len(ALL_ACTIONS)-1] = True
-
-    # check if other actions allowed:
-    for k, v in ACTIONS_MAP.items():
-        if v in placements_list:
-            masked_actions_dict[k] = True
-
-    masked_actions_list = [masked_actions_dict[i] for i in range(len(ALL_ACTIONS))]
-    return np.array(masked_actions_list)
 
 
 env = SimpleLegoEnv()
@@ -46,7 +21,7 @@ env = ActionMasker(env, mask_fn)  # Wrap to enable masking
 models_dir = f"models/{int(time.time())}/"
 logdir = f"logs/{int(time.time())}/"
 policy_kwargs = dict(activation_fn=th.nn.ReLU,
-                     net_arch=[512, 512, 256, 256, 128, 128])
+                     net_arch=[1024, 1024, 512, 512, 256, 256, 256, 128, 128, 128])
 
 model = MaskablePPO(MaskableActorCriticPolicy, env, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log=logdir)
 print(model.policy)
