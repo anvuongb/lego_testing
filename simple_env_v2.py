@@ -66,8 +66,9 @@ def mask_fn(env: gym.Env) -> np.ndarray:
 class SimpleLegoEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    def __init__(self, brick_base_shape=(2,2), pyramid_levels=4, min_pyramid_level=3, max_pyramid_level=10):
+    def __init__(self, brick_base_shape=(2,2), pyramid_levels=4, min_pyramid_level=3, max_pyramid_level=10, rand_levels=False):
         super(SimpleLegoEnv, self).__init__()
+        self.rand_levels = rand_levels
         self.pyramid_levels = pyramid_levels
         self.min_pyramid_level = min_pyramid_level
         self.max_pyramid_level = max_pyramid_level
@@ -182,13 +183,17 @@ class SimpleLegoEnv(gym.Env):
                 model = LegoModel(brick=self.bricks_list[0])
                 for brick in self.bricks_list[1:]:
                     model.add_brick(brick)
-                model.generate_ldr_file("test_v2_new_{}_levels.ldr".format(self.pyramid_levels))
+                if not self.rand_levels:
+                    model.generate_ldr_file("test_v2_new_fixed_{}_levels.ldr".format(self.pyramid_levels))
+                else:
+                    model.generate_ldr_file("test_v2_new_{}_levels.ldr".format(self.pyramid_levels))
 
         return observation, reward, terminated, truncated, info
     
     def reset(self, seed=42, options=None):
         # np.random.seed(seed)
-        self.pyramid_levels = np.random.randint(self.min_pyramid_level, self.max_pyramid_level+1)
+        if self.rand_levels:
+            self.pyramid_levels = np.random.randint(self.min_pyramid_level, self.max_pyramid_level+1)
         # don't change these vars
         # self.pyramid_levels = pyramid_levels
         # self.min_pyramid_level = min_pyramid_level

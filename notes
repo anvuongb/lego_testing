@@ -13,3 +13,6 @@ test_5.ldr -> mlp 128,128,128 with relu, rewards for moveup, change perce to 0.6
 tried PPO and DQN with "full" placement mode, still not working, tends to stuck in some local minima
 
 need to recheck the occupancy mask
+
+
+improve placement list generation, check rand_tower_fix_base, bricks can now be place on imperfect surface (not all 0's)

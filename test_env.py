@@ -1,6 +1,6 @@
 from simple_env_v2 import SimpleLegoEnv, mask_fn
 
-env = SimpleLegoEnv()
+env = SimpleLegoEnv(pyramid_levels=10, rand_levels=False)
 
 env.reset()
 print(env.actions_map,"\n")
