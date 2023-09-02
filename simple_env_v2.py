@@ -169,7 +169,7 @@ class SimpleLegoEnv(gym.Env):
                 # brick fits with desired region
                 reward = 1
                 # if entire layer is filled, big reward
-                if np.equal(self.occupancy_mat_list[self.current_layer_idx], self.target_stud_mat_list[self.current_layer_idx]):
+                if np.all(np.equal(self.occupancy_mat_list[self.current_layer_idx], self.target_stud_mat_list[self.current_layer_idx])):
                     reward += 10
                     # if entire model is filled, even bigger reward, and terminate
                     if self.current_layer_idx == self.pyramid_levels - 1:
