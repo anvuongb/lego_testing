@@ -176,6 +176,7 @@ class SimpleLegoEnv(gym.Env):
                         compared = [np.equal(self.occupancy_mat_list[idx], self.target_stud_mat_list[idx]) for idx in range(self.pyramid_levels)]
                         if np.all(compared):
                             reward += 10
+                            terminated = True
             else: 
                 reward = -1
 
