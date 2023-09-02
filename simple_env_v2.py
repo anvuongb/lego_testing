@@ -163,13 +163,22 @@ class SimpleLegoEnv(gym.Env):
             # mat to calculate if brick is with desired region
             mat = np.zeros((self.model_base_height, self.model_base_width))
             mat = update_occupied_stud_matrx(mat, np.ones(self.brick_base_shape), xunit, zunit)
-            
+
             # calculate reward
             if np.sum(np.multiply(mat, self.target_stud_mat_list[self.current_layer_idx])) == self.brick_base_shape[0]*self.brick_base_shape[1]:
                 # brick fits with desired region
                 reward = 1
+                # if entire layer is filled, big reward
+                if np.equal(self.occupancy_mat_list[self.current_layer_idx], self.target_stud_mat_list[self.current_layer_idx]):
+                    reward += 10
+                    # if entire model is filled, even bigger reward, and terminate
+                    if self.current_layer_idx == self.pyramid_levels - 1:
+                        compared = [np.equal(self.occupancy_mat_list[idx], self.target_stud_mat_list[idx]) for idx in range(self.pyramid_levels)]
+                        if np.all(compared):
+                            reward += 10
             else: 
                 reward = -1
+
         observation = []
         for mat in self.occupancy_mat_list:
             observation += list(mat.ravel())
