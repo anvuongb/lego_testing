@@ -53,3 +53,16 @@ if level is None:
                     fontScale, color, thickness, cv2.LINE_AA)
     
     cv2.imwrite(f'/home/anvuong/works/lego_testing/renders/{model_name}_ep_{episode}_combined.png', vis)
+
+else:
+    vis = cv2.imread(f"/home/anvuong/works/lego_testing/renders/tmp_ldr_render/{model_name}_ep_{episode}_{level}_levels.png")
+    # add some text
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    org = (30, 30)
+    fontScale = 1
+    color = (255, 255, 255)
+    thickness = 2
+    image = cv2.putText(vis, f'Model {model_name} - Episode {episode}', org, font, 
+                    fontScale, color, thickness, cv2.LINE_AA)
+    
+    cv2.imwrite(f'/home/anvuong/works/lego_testing/renders/{model_name}_ep_{episode}_combined.png', vis)
