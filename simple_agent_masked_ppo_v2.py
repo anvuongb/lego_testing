@@ -43,7 +43,7 @@ if __name__ == "__main__":
     print(f"model output is set to {models_dir}, logs are set to {logdir}")
 
     policy_kwargs = dict(activation_fn=th.nn.ReLU,
-                        net_arch=[1024, 1024, 512, 512, 256, 256, 256, 128, 128, 128])
+                        net_arch=[1024, 1024, 1024, 512, 512, 512, 256, 256, 256, 256, 128, 128, 128, 128])
 
     model = MaskablePPO(MaskableActorCriticPolicy, env, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log=logdir)
     if args.load is not None:
