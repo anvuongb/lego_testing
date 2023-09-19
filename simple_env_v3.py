@@ -121,7 +121,9 @@ class SimpleLegoEnv(gym.Env):
         self.model_base_width = self.max_pyramid_level*2
         self.model_base_height = self.max_pyramid_level*2
 
-        # masked actions for base smaller than max bas
+        self.base_floor = Brick(0,-24, 0, DEFAULT_TRANSFORM, f"base{self.model_base_width}x{self.model_base_height}", 324, "#8A12A8")
+
+        # masked actions for base smaller than max base
         self.action_control_stud_mat = np.zeros((self.model_base_height, self.model_base_width))
         idx_w = int((self.model_base_width-self.pyramid_base_width)/2)
         idx_h = int((self.model_base_height-self.pyramid_base_height)/2)
@@ -180,8 +182,6 @@ class SimpleLegoEnv(gym.Env):
         info = {}
         
         if action_decode == "moveup":
-            print("curr_action", action)
-            print(action_decode, "moveup")
             # check if already on top
             if self.current_layer_idx < self.pyramid_levels-1:
                 # move up to next layer
@@ -199,7 +199,6 @@ class SimpleLegoEnv(gym.Env):
                 terminated = True
                 reward = 0
         else:
-            print("curr_action", action)
             # apply action and update occupancy matrix
             brick_idx, xunit, zunit = action_decode
             # update budget
@@ -211,16 +210,16 @@ class SimpleLegoEnv(gym.Env):
             brick = Brick(0,-24,0, DEFAULT_TRANSFORM, brick_type, brick_color + self.current_layer_idx, "#8A12A8")
             if brick_rotate:
                 brick.rotate_yaxis_90deg_align_origin()
+            # translate to have correct ldr file
+            brick.translate_corner_to_brick_relative(self.base_floor)
             brick_mat = np.ones(brick.stud_matrix.shape)
             brick.unit_translate(xunit, -self.current_layer_idx, zunit)
             self.bricks_list.append(brick)
             self.bricks_per_level[self.current_layer_idx] += 1
 
             # update occupancy matrix
-            print(action_decode,"\n", brick.stud_matrix)
             self.occupancy_mat_list[self.current_layer_idx] = update_occupied_stud_matrx(self.occupancy_mat_list[self.current_layer_idx], 
                                                                                         brick_mat, xunit, zunit)
-            print(self.current_layer_idx, self.occupancy_mat_list[self.current_layer_idx])
             # mat to calculate if brick is with desired region
             mat = np.zeros((self.model_base_height, self.model_base_width))
             mat = update_occupied_stud_matrx(mat, brick_mat, xunit, zunit)
@@ -277,6 +276,8 @@ class SimpleLegoEnv(gym.Env):
         self.pyramid_base_height = self.pyramid_levels*2
         self.model_base_width = self.max_pyramid_level*2
         self.model_base_height = self.max_pyramid_level*2
+
+        self.base_floor = Brick(0,-24, 0, DEFAULT_TRANSFORM, f"base{self.model_base_width}x{self.model_base_height}", 324, "#8A12A8")
 
         # masked actions for base smaller than max bas
         self.action_control_stud_mat = np.zeros((self.model_base_height, self.model_base_width))

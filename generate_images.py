@@ -59,9 +59,9 @@ else:
     # add some text
     font = cv2.FONT_HERSHEY_SIMPLEX
     org = (30, 30)
-    fontScale = 1
+    fontScale = 0.4
     color = (255, 255, 255)
-    thickness = 2
+    thickness = 1
     image = cv2.putText(vis, f'Model {model_name} - Episode {episode}', org, font, 
                     fontScale, color, thickness, cv2.LINE_AA)
     

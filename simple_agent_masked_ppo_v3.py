@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # Read arguments from command line
     args = parser.parse_args()
 
-    env = SimpleLegoEnv(pyramid_levels=args.levels, rand_levels=args.rand_levels, brick_base_indices=[0, 1])
+    env = SimpleLegoEnv(pyramid_levels=args.levels, rand_levels=args.rand_levels, brick_base_indices=[0, 1, 2, 3, 4])
     print(f"rand_levels is set to {env.rand_levels}, pyramid levels is set to {env.pyramid_levels}")
     env.reset()
     env = ActionMasker(env, mask_fn)  # Wrap to enable masking
@@ -40,9 +40,9 @@ if __name__ == "__main__":
     print(f"model output is set to {models_dir}, logs are set to {logdir}")
 
     policy_kwargs = dict(activation_fn=th.nn.ReLU,
-                        net_arch=[1024, 1024, 1024, 512, 512, 512, 256, 256, 256, 256, 128, 128, 128, 128])
+                        net_arch=[2048, 2048, 2048, 1024, 1024, 1024, 512, 512, 512, 512])
 
-    model = MaskablePPO(MaskableActorCriticPolicy, env, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log=logdir)
+    model = MaskablePPO("MlpPolicy", env, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log=logdir)
     if args.load is not None:
         print(f"loading model from {args.load}")
         model.load(args.load)
