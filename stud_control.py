@@ -28,7 +28,7 @@ def get_all_possible_placements(stud_mat1, stud_mat2, mode='full', collide_type=
         row_idx = stud_mat1.shape[0]-stud_mat2.shape[0]-row_idx  # reverse since matrix representation is different than coordinate representation for this direction
         col_idx = col_idx
     # print(list(zip(row_idx, col_idx)))
-    return list(zip(col_idx, row_idx))
+    return list(map(list, zip(col_idx, row_idx)))
 
 def update_occupied_stud_matrx(stud_mat, top_mat, xunit, zunit):
     '''
