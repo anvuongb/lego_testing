@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # Read arguments from command line
     args = parser.parse_args()
 
-    env = SimpleLegoEnv(pyramid_levels=args.levels, rand_levels=args.rand_levels)
+    env = SimpleLegoEnv(pyramid_levels=args.levels, rand_levels=args.rand_levels, budget=False)
     print(f"rand_levels is set to {env.rand_levels}, pyramid levels is set to {env.pyramid_levels}")
     env.reset()
     env = ActionMasker(env, mask_fn)  # Wrap to enable masking
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     iters = 0
     # iters = 90
     while True:
+        print("iters", iters)
         iters += 1
         model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"MaskedPPO")
         if iters % 10 == 0:

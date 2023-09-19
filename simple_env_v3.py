@@ -20,38 +20,70 @@ BRICK_TYPE_MAP = {
     4: [(2,3), "3002.dat", 70, True],
     5: [(2,6), "2456.dat", 90, False],
     6: [(2,6), "2456.dat", 90, True]
+}
 
+BUDGET = {
+    0: 20,
+    1: 20,
+    2: 20,
+    3: 20,
+    4: 20,
+    5: 20,
+    6: 20
 }
 
 def base_action_generation(base_stud_mat, brick_stud_mat, mode="valid"):
     actions = get_all_possible_placements(base_stud_mat, brick_stud_mat, mode=mode)
     return actions
 
-def base_action_generation_multiple_bricks(base_stud_mat, brick_indices, mode="valid"):
+def base_action_generation_multiple_bricks(base_stud_mat, brick_indices, mode="valid", collide_type="brick", budget=None):
     # similar to base_action_generation but input is a list of different brick types
     actions = []
 
     for idx in brick_indices:
-        brick_stud_mat, rotate = np.ones(BRICK_TYPE_MAP[idx][0]), BRICK_TYPE_MAP[idx][-1]
-        if rotate:
-            brick_stud_mat = brick_stud_mat.transpose()
-        tmp = get_all_possible_placements(base_stud_mat, brick_stud_mat, mode=mode)
-        for a in tmp:
-            a.insert(0, idx)
-        actions += tmp
+        if budget is None or budget[idx] > 0:
+            brick_stud_mat, rotate = np.ones(BRICK_TYPE_MAP[idx][0]), BRICK_TYPE_MAP[idx][-1]
+            if rotate:
+                brick_stud_mat = brick_stud_mat.transpose()
+            tmp = get_all_possible_placements(base_stud_mat, brick_stud_mat, mode=mode, collide_type=collide_type)
+            for a in tmp:
+                a.insert(0, idx)
+            actions += tmp
 
     return actions
 
 
 def mask_fn(env: gym.Env) -> np.ndarray:
-    placements_list = get_all_possible_placements(env.occupancy_mat_list[env.current_layer_idx], env.brick_base_indices, mode="valid", collide_type="brick")
+    placements_list = base_action_generation_multiple_bricks(env.occupancy_mat_list[env.current_layer_idx], 
+                                                             env.brick_base_indices, mode="valid", 
+                                                             collide_type="brick",
+                                                             budget=env.budget_map)
+    # convert to tuple
+    for idx, val in enumerate(placements_list):
+        placements_list[idx] = tuple(val)
+    # placements_list = get_all_possible_placements(env.occupancy_mat_list[env.current_layer_idx], env.base_brick_stud_mat, mode="valid", collide_type="brick")
     # stud_control_mat
-    placements_control_list = get_all_possible_placements(env.action_control_stud_mat, env.brick_base_indices, mode="valid", collide_type="brick")
+    placements_control_list = base_action_generation_multiple_bricks(env.action_control_stud_mat, 
+                                                                     env.brick_base_indices, 
+                                                                     mode="valid", 
+                                                                     collide_type="brick",
+                                                                     budget=env.budget_map)
+    # convert to tuple
+    for idx, val in enumerate(placements_control_list):
+        placements_control_list[idx] = tuple(val)
+    # placements_control_list = get_all_possible_placements(env.action_control_stud_mat, env.base_brick_stud_mat, mode="valid", collide_type="brick")
     placements_list = list(set(placements_control_list).intersection(placements_list))
-
     if env.current_layer_idx > 0:
         # allow placement over holes if possible
-        placements_partial_list = get_all_possible_placements(1 - env.occupancy_mat_list[env.current_layer_idx-1], env.brick_base_indices, mode="valid", collide_type="hole")
+        placements_partial_list = base_action_generation_multiple_bricks(1 - env.occupancy_mat_list[env.current_layer_idx-1], 
+                                                                         env.brick_base_indices, 
+                                                                         mode="valid", 
+                                                                         collide_type="hole",
+                                                                         budget=env.budget_map)
+        # convert to tuple
+        for idx, val in enumerate(placements_partial_list):
+            placements_partial_list[idx] = tuple(val)
+        # placements_partial_list = get_all_possible_placements(1 - env.occupancy_mat_list[env.current_layer_idx-1], env.base_brick_stud_mat, mode="valid", collide_type="hole")
         placements_list = list(set(placements_partial_list).intersection(placements_list))
     masked_actions_dict = {}
 
@@ -64,17 +96,23 @@ def mask_fn(env: gym.Env) -> np.ndarray:
 
     # check if other actions allowed:
     for k, v in env.actions_map.items():
-        if v in placements_list:
+        if tuple(v) in placements_list:
             masked_actions_dict[k] = True
 
     masked_actions_list = [masked_actions_dict[i] for i in range(len(env.all_actions))]
+    # print(masked_actions_list)
     return np.array(masked_actions_list)
     
 class SimpleLegoEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    def __init__(self, brick_base_indices=[0, 1, 2, 3, 4, 5, 6], pyramid_levels=4, min_pyramid_level=3, max_pyramid_level=10, rand_levels=False):
+    def __init__(self, brick_base_indices=[0, 1, 2, 3, 4, 5, 6], pyramid_levels=4, min_pyramid_level=3, max_pyramid_level=10, rand_levels=False, budget=False):
         super(SimpleLegoEnv, self).__init__()
+        self.budget = budget
+        if self.budget:
+            self.budget_map = BUDGET.copy()
+        else:
+            self.budget_map = None
         self.rand_levels = rand_levels
         self.pyramid_levels = pyramid_levels
         self.min_pyramid_level = min_pyramid_level
@@ -141,7 +179,10 @@ class SimpleLegoEnv(gym.Env):
         terminated = False
         truncated = False
         info = {}
+        
         if action_decode == "moveup":
+            print("curr_action", action)
+            print(action_decode, "moveup")
             # check if already on top
             if self.current_layer_idx < self.pyramid_levels-1:
                 # move up to next layer
@@ -159,8 +200,12 @@ class SimpleLegoEnv(gym.Env):
                 terminated = True
                 reward = 0
         else:
+            print("curr_action", action)
             # apply action and update occupancy matrix
             brick_idx, xunit, zunit = action_decode
+            # update budget
+            if self.budget_map:
+                self.budget_map[brick_idx] -= 1
             _, brick_type, brick_color, brick_rotate = BRICK_TYPE_MAP[brick_idx]
 
             # create brick and save bricks ldr for visualizing
@@ -173,9 +218,10 @@ class SimpleLegoEnv(gym.Env):
             self.bricks_per_level[self.current_layer_idx] += 1
 
             # update occupancy matrix
+            print(action_decode,"\n", brick.stud_matrix)
             self.occupancy_mat_list[self.current_layer_idx] = update_occupied_stud_matrx(self.occupancy_mat_list[self.current_layer_idx], 
                                                                                         brick_mat, xunit, zunit)
-            
+            print(self.current_layer_idx, self.occupancy_mat_list[self.current_layer_idx])
             # mat to calculate if brick is with desired region
             mat = np.zeros((self.model_base_height, self.model_base_width))
             mat = update_occupied_stud_matrx(mat, brick_mat, xunit, zunit)
@@ -210,9 +256,9 @@ class SimpleLegoEnv(gym.Env):
                 for brick in self.bricks_list[1:]:
                     model.add_brick(brick)
                 if not self.rand_levels:
-                    model.generate_ldr_file("test_v2_new_fixed_{}_levels.ldr".format(self.pyramid_levels))
+                    model.generate_ldr_file("test_v3_fixed_{}_levels.ldr".format(self.pyramid_levels))
                 else:
-                    model.generate_ldr_file("test_v2_new_{}_levels.ldr".format(self.pyramid_levels))
+                    model.generate_ldr_file("test_v3_rand_{}_levels.ldr".format(self.pyramid_levels))
 
         return observation, reward, terminated, truncated, info
     
@@ -224,6 +270,10 @@ class SimpleLegoEnv(gym.Env):
         # self.pyramid_levels = pyramid_levels
         # self.min_pyramid_level = min_pyramid_level
         # self.max_pyramid_level = max_pyramid_level
+        if self.budget:
+            self.budget_map = BUDGET.copy()
+        else:
+            self.budget_map = None
         self.pyramid_base_width = self.pyramid_levels*2
         self.pyramid_base_height = self.pyramid_levels*2
         self.model_base_width = self.max_pyramid_level*2
