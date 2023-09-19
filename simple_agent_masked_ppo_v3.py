@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # Read arguments from command line
     args = parser.parse_args()
 
-    env = SimpleLegoEnv(pyramid_levels=args.levels, rand_levels=args.rand_levels)
+    env = SimpleLegoEnv(pyramid_levels=args.levels, rand_levels=args.rand_levels, brick_base_indices=[0, 1])
     print(f"rand_levels is set to {env.rand_levels}, pyramid levels is set to {env.pyramid_levels}")
     env.reset()
     env = ActionMasker(env, mask_fn)  # Wrap to enable masking

@@ -1,12 +1,11 @@
 import gymnasium as gym
 from gymnasium import spaces
-import subprocess
 import numpy as np
 from lego import Brick, LegoModel
 from stud_control import update_occupied_stud_matrx, get_all_possible_placements
 import helpers
-from collections import deque
-from copy import deepcopy
+
+# TODO: some bricks are colliding
 
 # default transform for lego brick
 DEFAULT_TRANSFORM = helpers.build_translation_matrix(0, -24, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
